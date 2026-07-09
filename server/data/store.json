@@ -1,0 +1,45 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Anandu",
+      "email": "ak@test.com",
+      "password": "$2a$10$soMWWXqHjcteptmGbgNe5eff1Ep.bVM8ErtYpJpfzYJ6O8XqafmOe",
+      "createdAt": "2026-07-09T09:34:22.848Z"
+    },
+    {
+      "id": 2,
+      "name": "siva",
+      "email": "siva@test.com",
+      "password": "$2a$10$82FL9JKkqCnOjpf7O0/vZuZARvymg15UBdsOKBeEUyWa.X/kT4pMm",
+      "createdAt": "2026-07-09T09:41:07.945Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": 1,
+      "name": "Devtool",
+      "description": "Its an application for development",
+      "ownerId": 1,
+      "members": [
+        1
+      ],
+      "tasks": [
+        {
+          "id": 1,
+          "title": "UI designing phase 1",
+          "description": "Designing the main interface of the application",
+          "status": "backlog",
+          "assigneeId": null,
+          "comments": [],
+          "createdAt": "2026-07-09T09:41:24.690Z"
+        }
+      ],
+      "createdAt": "2026-07-09T09:34:44.808Z"
+    }
+  ],
+  "nextUserId": 3,
+  "nextProjectId": 2,
+  "nextTaskId": 2,
+  "nextCommentId": 1
+}
