@@ -276,6 +276,72 @@ app.post('/api/tasks/:taskId/comments', authenticate, (req, res) => {
   res.status(201).json(comment);
 });
 
+app.patch('/api/tasks/:taskId/comments/:commentId', authenticate, (req, res) => {
+  const { text } = req.body;
+  if (!text || !text.trim()) {
+    return res.status(400).json({ message: 'Comment text is required.' });
+  }
+
+  const store = readStore();
+  let taskFound = null;
+  let projectFound = null;
+  let commentFound = null;
+
+  for (const project of store.projects) {
+    const task = project.tasks.find((item) => item.id === Number(req.params.taskId));
+    if (task) {
+      taskFound = task;
+      projectFound = project;
+      commentFound = task.comments.find((item) => item.id === Number(req.params.commentId));
+      break;
+    }
+  }
+
+  if (!taskFound || !projectFound || !commentFound) {
+    return res.status(404).json({ message: 'Comment not found.' });
+  }
+
+  if (commentFound.userId !== req.user.id) {
+    return res.status(403).json({ message: 'You can only edit your own comments.' });
+  }
+
+  commentFound.text = text.trim();
+  writeStore(store);
+  broadcast('task:updated', { projectId: projectFound.id, task: taskFound });
+  res.json(commentFound);
+});
+
+app.delete('/api/tasks/:taskId/comments/:commentId', authenticate, (req, res) => {
+  const store = readStore();
+  let taskFound = null;
+  let projectFound = null;
+  let commentIndex = -1;
+
+  for (const project of store.projects) {
+    const task = project.tasks.find((item) => item.id === Number(req.params.taskId));
+    if (task) {
+      taskFound = task;
+      projectFound = project;
+      commentIndex = task.comments.findIndex((item) => item.id === Number(req.params.commentId));
+      break;
+    }
+  }
+
+  if (!taskFound || !projectFound || commentIndex === -1) {
+    return res.status(404).json({ message: 'Comment not found.' });
+  }
+
+  const comment = taskFound.comments[commentIndex];
+  if (comment.userId !== req.user.id) {
+    return res.status(403).json({ message: 'You can only delete your own comments.' });
+  }
+
+  taskFound.comments.splice(commentIndex, 1);
+  writeStore(store);
+  broadcast('task:updated', { projectId: projectFound.id, task: taskFound });
+  res.status(204).send();
+});
+
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

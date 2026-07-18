@@ -13,6 +13,13 @@
       "email": "siva@test.com",
       "password": "$2a$10$82FL9JKkqCnOjpf7O0/vZuZARvymg15UBdsOKBeEUyWa.X/kT4pMm",
       "createdAt": "2026-07-09T09:41:07.945Z"
+    },
+    {
+      "id": 3,
+      "name": "Anandu K",
+      "email": "anandu@demo.com",
+      "password": "$2a$10$TYgZnqtd3WPJwnKhjCFHJeLxzG8yPk4Fu8AL3lwUV1UNUokEvPpDG",
+      "createdAt": "2026-07-17T16:42:41.520Z"
     }
   ],
   "projects": [
@@ -36,10 +43,57 @@
         }
       ],
       "createdAt": "2026-07-09T09:34:44.808Z"
+    },
+    {
+      "id": 2,
+      "name": "UI Designing",
+      "description": "The designing of the main interfaces for the Restaurant POS System",
+      "ownerId": 3,
+      "members": [
+        3
+      ],
+      "tasks": [
+        {
+          "id": 2,
+          "title": "The Main Framework",
+          "description": "Creating the main framework for the designing",
+          "status": "inprogress",
+          "assigneeId": "2",
+          "comments": [
+            {
+              "id": 2,
+              "userId": 3,
+              "userName": "Anandu K",
+              "text": "It need to be more interactive",
+              "createdAt": "2026-07-18T05:07:10.469Z"
+            }
+          ],
+          "createdAt": "2026-07-17T16:46:40.863Z"
+        },
+        {
+          "id": 3,
+          "title": "Backend Development",
+          "description": "Creating the backend of the Restaurant POS Sytem",
+          "status": "review",
+          "assigneeId": "1",
+          "comments": [],
+          "createdAt": "2026-07-18T04:52:45.607Z"
+        },
+        {
+          "id": 4,
+          "title": "Frontend development",
+          "description": "Creating the frontend for the Restaurant POS System",
+          "status": "done",
+          "assigneeId": "3",
+          "comments": [],
+          "createdAt": "2026-07-18T05:05:39.039Z"
+        }
+      ],
+      "createdAt": "2026-07-17T16:43:49.257Z"
     }
   ],
-  "nextUserId": 3,
-  "nextProjectId": 2,
-  "nextTaskId": 2,
-  "nextCommentId": 1
+  "nextUserId": 4,
+  "nextProjectId": 3,
+  "nextTaskId": 5,
+  "nextCommentId": 4
 }

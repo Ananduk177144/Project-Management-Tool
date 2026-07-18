@@ -24,13 +24,37 @@ function App() {
   const [commentText, setCommentText] = useState("");
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
+  const [isMessageVisible, setIsMessageVisible] = useState(false);
   const [live, setLive] = useState(false);
   const [commentDrafts, setCommentDrafts] = useState({});
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [commentEditText, setCommentEditText] = useState("");
 
   const authHeaders = useMemo(
     () => ({ Authorization: `Bearer ${token}` }),
     [token],
   );
+
+  useEffect(() => {
+    if (!message) {
+      setIsMessageVisible(false);
+      return;
+    }
+
+    setIsMessageVisible(true);
+    const timer = window.setTimeout(() => {
+      setIsMessageVisible(false);
+    }, 4500);
+
+    const clearTimer = window.setTimeout(() => {
+      setMessage("");
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [message]);
 
   useEffect(() => {
     if (!token) return;
@@ -152,13 +176,43 @@ function App() {
 
   const handleStatusUpdate = async (taskId, status) => {
     try {
-      await axios.patch(
+      const response = await axios.patch(
         `${API_URL}/tasks/${taskId}`,
         { status },
         { headers: authHeaders },
       );
+
+      setProjects((prev) =>
+        prev.map((project) => ({
+          ...project,
+          tasks: (project.tasks || []).map((task) =>
+            task.id === taskId ? response.data : task,
+          ),
+        })),
+      );
     } catch (error) {
       setMessage(error.response?.data?.message || "Unable to update task");
+    }
+  };
+
+  const handleAssigneeUpdate = async (taskId, assigneeId) => {
+    try {
+      const response = await axios.patch(
+        `${API_URL}/tasks/${taskId}`,
+        { assigneeId },
+        { headers: authHeaders },
+      );
+
+      setProjects((prev) =>
+        prev.map((project) => ({
+          ...project,
+          tasks: (project.tasks || []).map((task) =>
+            task.id === taskId ? response.data : task,
+          ),
+        })),
+      );
+    } catch (error) {
+      setMessage(error.response?.data?.message || "Unable to update assignee");
     }
   };
 
@@ -170,15 +224,95 @@ function App() {
     }
 
     try {
-      await axios.post(
+      const response = await axios.post(
         `${API_URL}/tasks/${taskId}/comments`,
         { text },
         { headers: authHeaders },
+      );
+
+      setProjects((prev) =>
+        prev.map((project) => ({
+          ...project,
+          tasks: (project.tasks || []).map((task) =>
+            task.id === taskId
+              ? { ...task, comments: [...(task.comments || []), response.data] }
+              : task,
+          ),
+        })),
       );
       setCommentDrafts((prev) => ({ ...prev, [taskId]: "" }));
       setMessage("Comment posted");
     } catch (error) {
       setMessage(error.response?.data?.message || "Unable to comment");
+    }
+  };
+
+  const handleCommentEdit = async (taskId, commentId) => {
+    const text = commentEditText.trim();
+    if (!text) {
+      setMessage("Please enter a comment before saving.");
+      return;
+    }
+
+    try {
+      const response = await axios.patch(
+        `${API_URL}/tasks/${taskId}/comments/${commentId}`,
+        { text },
+        { headers: authHeaders },
+      );
+
+      setProjects((prev) =>
+        prev.map((project) => ({
+          ...project,
+          tasks: (project.tasks || []).map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  comments: (task.comments || []).map((comment) =>
+                    comment.id === commentId ? response.data : comment,
+                  ),
+                }
+              : task,
+          ),
+        })),
+      );
+      setEditingCommentId(null);
+      setCommentEditText("");
+      setMessage("Comment updated");
+    } catch (error) {
+      setMessage(error.response?.data?.message || "Unable to update comment");
+    }
+  };
+
+  const handleCommentDelete = async (taskId, commentId) => {
+    if (!window.confirm("Delete this comment?")) return;
+
+    try {
+      await axios.delete(
+        `${API_URL}/tasks/${taskId}/comments/${commentId}`,
+        { headers: authHeaders },
+      );
+
+      setProjects((prev) =>
+        prev.map((project) => ({
+          ...project,
+          tasks: (project.tasks || []).map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  comments: (task.comments || []).filter(
+                    (comment) => comment.id !== commentId,
+                  ),
+                }
+              : task,
+          ),
+        })),
+      );
+      setEditingCommentId(null);
+      setCommentEditText("");
+      setMessage("Comment deleted");
+    } catch (error) {
+      setMessage(error.response?.data?.message || "Unable to delete comment");
     }
   };
 
@@ -240,7 +374,11 @@ function App() {
               {authMode === "login" ? "Sign in" : "Create account"}
             </button>
           </form>
-          {message && <p className="status">{message}</p>}
+          {message && (
+            <p className={`status ${isMessageVisible ? "visible" : "hidden"}`}>
+              {message}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -335,6 +473,7 @@ function App() {
                   }
                 />
                 <select
+                  className="task-form-select"
                   value={taskForm.assigneeId}
                   onChange={(e) =>
                     setTaskForm({ ...taskForm, assigneeId: e.target.value })
@@ -348,6 +487,7 @@ function App() {
                   ))}
                 </select>
                 <select
+                  className="task-form-select"
                   value={taskForm.status}
                   onChange={(e) =>
                     setTaskForm({ ...taskForm, status: e.target.value })
@@ -375,28 +515,95 @@ function App() {
                         <h4>{task.title}</h4>
                         <p>{task.description}</p>
                         <div className="task-meta">
-                          <span>
-                            {users.find((u) => u.id === task.assigneeId)
-                              ?.name || "Unassigned"}
-                          </span>
-                          <select
-                            value={task.status}
-                            onChange={(e) =>
-                              handleStatusUpdate(task.id, e.target.value)
-                            }
-                          >
-                            <option value="backlog">Backlog</option>
-                            <option value="inprogress">In Progress</option>
-                            <option value="review">Review</option>
-                            <option value="done">Done</option>
-                          </select>
+                          <div>
+                            <label>Assignee</label>
+                            <select
+                              value={task.assigneeId || ""}
+                              onChange={(e) =>
+                                handleAssigneeUpdate(task.id, e.target.value)
+                              }
+                            >
+                              <option value="">Unassigned</option>
+                              {users.map((u) => (
+                                <option key={u.id} value={u.id}>
+                                  {u.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label>Status</label>
+                            <select
+                              value={task.status}
+                              onChange={(e) =>
+                                handleStatusUpdate(task.id, e.target.value)
+                              }
+                            >
+                              <option value="backlog">Backlog</option>
+                              <option value="inprogress">In Progress</option>
+                              <option value="review">Review</option>
+                              <option value="done">Done</option>
+                            </select>
+                          </div>
                         </div>
                         <div className="comments-box">
                           <h5>Comments</h5>
                           {(task.comments || []).map((comment) => (
                             <div key={comment.id} className="comment-item">
-                              <strong>{comment.userName}</strong>
-                              <p>{comment.text}</p>
+                              <div className="comment-header">
+                                <strong>{comment.userName}</strong>
+                                {user && comment.userId === user.id && (
+                                  <div className="comment-actions">
+                                    <button
+                                      className="comment-action-btn"
+                                      onClick={() => {
+                                        setEditingCommentId(comment.id);
+                                        setCommentEditText(comment.text);
+                                      }}
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      className="comment-action-btn delete"
+                                      onClick={() =>
+                                        handleCommentDelete(task.id, comment.id)
+                                      }
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              {editingCommentId === comment.id ? (
+                                <>
+                                  <textarea
+                                    value={commentEditText}
+                                    onChange={(e) =>
+                                      setCommentEditText(e.target.value)
+                                    }
+                                  />
+                                  <div className="comment-action-row">
+                                    <button
+                                      onClick={() =>
+                                        handleCommentEdit(task.id, comment.id)
+                                      }
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      className="comment-action-btn"
+                                      onClick={() => {
+                                        setEditingCommentId(null);
+                                        setCommentEditText("");
+                                      }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </>
+                              ) : (
+                                <p>{comment.text}</p>
+                              )}
                             </div>
                           ))}
                           <textarea
@@ -424,7 +631,11 @@ function App() {
             Create a project to start planning your work.
           </div>
         )}
-        {message && <p className="status">{message}</p>}
+        {message && (
+          <p className={`status ${isMessageVisible ? "visible" : "hidden"}`}>
+            {message}
+          </p>
+        )}
       </main>
     </div>
   );
