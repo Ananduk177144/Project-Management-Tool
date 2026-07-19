@@ -57,17 +57,9 @@
           "id": 2,
           "title": "The Main Framework",
           "description": "Creating the main framework for the designing",
-          "status": "inprogress",
-          "assigneeId": "2",
-          "comments": [
-            {
-              "id": 2,
-              "userId": 3,
-              "userName": "Anandu K",
-              "text": "It need to be more interactive",
-              "createdAt": "2026-07-18T05:07:10.469Z"
-            }
-          ],
+          "status": "backlog",
+          "assigneeId": "",
+          "comments": [],
           "createdAt": "2026-07-17T16:46:40.863Z"
         },
         {
@@ -90,10 +82,21 @@
         }
       ],
       "createdAt": "2026-07-17T16:43:49.257Z"
+    },
+    {
+      "id": 3,
+      "name": "Restaurant POS system",
+      "description": "",
+      "ownerId": 3,
+      "members": [
+        3
+      ],
+      "tasks": [],
+      "createdAt": "2026-07-19T05:27:27.095Z"
     }
   ],
   "nextUserId": 4,
-  "nextProjectId": 3,
+  "nextProjectId": 4,
   "nextTaskId": 5,
   "nextCommentId": 4
 }

@@ -113,6 +113,21 @@ function App() {
   const currentProject =
     projects.find((project) => project.id === selectedProjectId) || null;
 
+  const statusCounts = useMemo(() => {
+    const counts = { backlog: 0, inprogress: 0, review: 0, done: 0 };
+    (currentProject?.tasks || []).forEach((task) => {
+      if (counts[task.status] !== undefined) {
+        counts[task.status] += 1;
+      }
+    });
+    return counts;
+  }, [currentProject]);
+
+  const completionPercent =
+    currentProject?.tasks?.length > 0
+      ? Math.round((statusCounts.done / currentProject.tasks.length) * 100)
+      : 0;
+
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -436,21 +451,44 @@ function App() {
         {currentProject ? (
           <>
             <header className="hero-card">
-              <div>
+              <div className="hero-copy">
+                <div className="hero-badges">
+                  <span className="hero-badge accent">⚡ Focus mode</span>
+                  <span className={`hero-badge ${live ? "live" : "pending"}`}>
+                    {live ? "Live updates on" : "Connecting…"}
+                  </span>
+                </div>
                 <h1>{currentProject.name}</h1>
                 <p>
                   {currentProject.description ||
                     "A collaborative workspace for your team."}
                 </p>
               </div>
-              <div className="hero-stats">
-                <div>
-                  <strong>{currentProject.tasks?.length || 0}</strong>
-                  <span>Tasks</span>
+              <div className="hero-side-stack">
+                <div className="hero-stats">
+                  <div>
+                    <strong>{currentProject.tasks?.length || 0}</strong>
+                    <span>Tasks</span>
+                  </div>
+                  <div>
+                    <strong>{users.length}</strong>
+                    <span>Members</span>
+                  </div>
                 </div>
-                <div>
-                  <strong>{users.length}</strong>
-                  <span>Members</span>
+                <div className="hero-progress-panel">
+                  <div className="progress-top">
+                    <span>Completion</span>
+                    <strong>{completionPercent}%</strong>
+                  </div>
+                  <div className="progress-track">
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${completionPercent}%` }}
+                    />
+                  </div>
+                  <div className="progress-caption">
+                    {statusCounts.done} done • {statusCounts.inprogress} active
+                  </div>
                 </div>
               </div>
             </header>
@@ -511,7 +549,7 @@ function App() {
                   {(currentProject.tasks || [])
                     .filter((task) => task.status === status)
                     .map((task) => (
-                      <div key={task.id} className="task-card">
+                      <div key={task.id} className={`task-card ${task.status}`}>
                         <h4>{task.title}</h4>
                         <p>{task.description}</p>
                         <div className="task-meta">
